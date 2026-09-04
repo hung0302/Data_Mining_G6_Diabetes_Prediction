@@ -4,6 +4,7 @@ import xgboost as xgb
 import gspread
 from google.oauth2.service_account import Credentials
 import io
+import datetime
 
 # =========================================================
 # PAGE CONFIG
@@ -96,9 +97,43 @@ with tab1:
             phys_hlth = st.number_input("PhysHlth (Ngày SK thể chất kém 0-30)", min_value=0, max_value=30, value=0)
             diff_walk = st.selectbox("DiffWalk (Khó đi lại)", options=["No", "Yes"])
             sex = st.selectbox("Sex (Giới tính)", options=["Nữ (0)", "Nam (1)"])
-            age = st.number_input("Age (Nhóm tuổi 1-13)", min_value=1, max_value=13, value=5)
-            education = st.number_input("Education (Học vấn 1-6)", min_value=1, max_value=6, value=4)
-            income = st.number_input("Income (Thu nhập 1-8)", min_value=1, max_value=8, value=5)
+            current_year = datetime.date.today().year
+            birth_year = st.number_input("Năm sinh", min_value=1900, max_value=current_year, value=1990)
+            age_years = current_year - birth_year
+            if age_years < 25: age = 1
+            elif age_years <= 29: age = 2
+            elif age_years <= 34: age = 3
+            elif age_years <= 39: age = 4
+            elif age_years <= 44: age = 5
+            elif age_years <= 49: age = 6
+            elif age_years <= 54: age = 7
+            elif age_years <= 59: age = 8
+            elif age_years <= 64: age = 9
+            elif age_years <= 69: age = 10
+            elif age_years <= 74: age = 11
+            elif age_years <= 79: age = 12
+            else: age = 13
+
+            education_options = {
+                "Chưa bao giờ đi học hoặc chỉ học mẫu giáo": 1,
+                "Lớp 1 đến lớp 8 (Tiểu học)": 2,
+                "Lớp 9 đến lớp 11 (Một phần THPT)": 3,
+                "Lớp 12 hoặc GED (Tốt nghiệp THPT)": 4,
+                "Đại học/CĐ 1 đến 3 năm": 5,
+                "Đại học 4 năm trở lên": 6
+            }
+            education_text = st.selectbox("Học vấn", options=list(education_options.keys()), index=3)
+            education = education_options[education_text]
+
+            income_value = st.number_input("Thu nhập hàng năm (USD)", min_value=0, value=50000, step=1000)
+            if income_value < 10000: income = 1
+            elif income_value < 15000: income = 2
+            elif income_value < 20000: income = 3
+            elif income_value < 25000: income = 4
+            elif income_value < 35000: income = 5
+            elif income_value < 50000: income = 6
+            elif income_value < 75000: income = 7
+            else: income = 8
             
         submit_button = st.form_submit_button("Dự đoán và Lưu Google Sheet", type="primary")
 
