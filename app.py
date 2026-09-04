@@ -11,9 +11,9 @@ import datetime
 # =========================================================
 st.set_page_config(page_title="Diabetes Prediction", page_icon="📊", layout="wide")
 st.title("Diabetes Risk Prediction")
-st.caption("XGBoost Prediction Demo - Hỗ trợ nhập lẻ & Tải file hàng loạt")
+st.caption("XGBoost Prediction Demo - Single Entry & Batch Upload Supported")
 
-# Danh sách đúng 21 cột feature mô hình cần
+# 21 feature columns required by the model
 col_names = [
     "HighBP", "HighChol", "CholCheck", "BMI", "Smoker", "Stroke", "HeartDiseaseorAttack", 
     "PhysActivity", "Fruits", "Veggies", "HvyAlcoholConsump", "AnyHealthcare", "NoDocbcCost", 
@@ -30,7 +30,7 @@ def load_model():
         model.load_model("diabetes_model.json")
         return model
     except FileNotFoundError:
-        st.error("Lỗi: Không tìm thấy file 'diabetes_model.json'. Vui lòng kiểm tra lại.")
+        st.error("Error: Model file 'diabetes_model.json' not found. Please check.")
         st.stop()
 
 model = load_model()
@@ -54,51 +54,51 @@ def connect_google_sheet():
         worksheet = spreadsheet.worksheet(st.secrets["google_sheet"]["worksheet"])
         return worksheet
     except Exception as e:
-        st.error("Lỗi kết nối Google Sheet. Vui lòng kiểm tra lại cấu hình và quyền truy cập.")
+        st.error("Error connecting to Google Sheet. Please check your credentials and permissions.")
         st.exception(e)
         st.stop()
 
 worksheet = connect_google_sheet()
 
 # =========================================================
-# GIAO DIỆN CHIA TAB
+# TABS INTERFACE
 # =========================================================
-tab1, tab2 = st.tabs(["📝 Nhập lẻ từng bệnh nhân", "📂 Tải file hàng loạt"])
+tab1, tab2 = st.tabs(["📝 Single Patient Entry", "📂 Batch File Upload"])
 
 # ---------------------------------------------------------
-# TAB 1: NHẬP LẺ
+# TAB 1: SINGLE ENTRY
 # ---------------------------------------------------------
 with tab1:
-    st.subheader("Hồ sơ bệnh nhân mới")
+    st.subheader("New Patient Profile")
 
     with st.form("patient_form"):
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            highbp = st.selectbox("HighBP (Huyết áp cao)", options=["No", "Yes"])
-            highchol = st.selectbox("HighChol (Cholesterol cao)", options=["No", "Yes"])
-            cholcheck = st.selectbox("CholCheck (Đã kiểm tra Chol)", options=["No", "Yes"])
-            bmi = st.number_input("BMI (Chỉ số khối cơ thể)", min_value=10.0, max_value=100.0, value=25.0)
-            smoker = st.selectbox("Smoker (Hút thuốc)", options=["No", "Yes"])
-            stroke = st.selectbox("Stroke (Đột quỵ)", options=["No", "Yes"])
-            heart_disease = st.selectbox("HeartDiseaseorAttack (Bệnh tim)", options=["No", "Yes"])
+            highbp = st.selectbox("HighBP", options=["No", "Yes"])
+            highchol = st.selectbox("HighChol", options=["No", "Yes"])
+            cholcheck = st.selectbox("CholCheck (Checked in last 5 years)", options=["No", "Yes"])
+            bmi = st.number_input("BMI", min_value=10.0, max_value=100.0, value=25.0)
+            smoker = st.selectbox("Smoker", options=["No", "Yes"])
+            stroke = st.selectbox("Stroke", options=["No", "Yes"])
+            heart_disease = st.selectbox("HeartDiseaseorAttack", options=["No", "Yes"])
             
         with col2:
-            phys_activity = st.selectbox("PhysActivity (Tập thể dục)", options=["No", "Yes"])
-            fruits = st.selectbox("Fruits (Ăn hoa quả)", options=["No", "Yes"])
-            veggies = st.selectbox("Veggies (Ăn rau)", options=["No", "Yes"])
-            hvy_alcohol = st.selectbox("HvyAlcoholConsump (Nghiện rượu)", options=["No", "Yes"])
-            any_healthcare = st.selectbox("AnyHealthcare (Có BHYT)", options=["No", "Yes"])
-            nodoc_cost = st.selectbox("NoDocbcCost (Bỏ khám do phí)", options=["No", "Yes"])
-            gen_hlth = st.number_input("GenHlth (Sức khỏe chung 1-5)", min_value=1, max_value=5, value=3)
+            phys_activity = st.selectbox("PhysActivity", options=["No", "Yes"])
+            fruits = st.selectbox("Fruits", options=["No", "Yes"])
+            veggies = st.selectbox("Veggies", options=["No", "Yes"])
+            hvy_alcohol = st.selectbox("HvyAlcoholConsump", options=["No", "Yes"])
+            any_healthcare = st.selectbox("AnyHealthcare", options=["No", "Yes"])
+            nodoc_cost = st.selectbox("NoDocbcCost", options=["No", "Yes"])
+            gen_hlth = st.number_input("GenHlth (1-5 scale)", min_value=1, max_value=5, value=3)
             
         with col3:
-            ment_hlth = st.number_input("MentHlth (Ngày SK tâm thần kém 0-30)", min_value=0, max_value=30, value=0)
-            phys_hlth = st.number_input("PhysHlth (Ngày SK thể chất kém 0-30)", min_value=0, max_value=30, value=0)
-            diff_walk = st.selectbox("DiffWalk (Khó đi lại)", options=["No", "Yes"])
-            sex = st.selectbox("Sex (Giới tính)", options=["Nữ (0)", "Nam (1)"])
+            ment_hlth = st.number_input("MentHlth (Poor mental health days 0-30)", min_value=0, max_value=30, value=0)
+            phys_hlth = st.number_input("PhysHlth (Poor physical health days 0-30)", min_value=0, max_value=30, value=0)
+            diff_walk = st.selectbox("DiffWalk (Difficulty walking)", options=["No", "Yes"])
+            sex = st.selectbox("Sex", options=["Female (0)", "Male (1)"])
             current_year = datetime.date.today().year
-            birth_year = st.number_input("Năm sinh", min_value=1900, max_value=current_year, value=1990)
+            birth_year = st.number_input("Birth Year", min_value=1900, max_value=current_year, value=1990)
             age_years = current_year - birth_year
             if age_years < 25: age = 1
             elif age_years <= 29: age = 2
@@ -115,17 +115,17 @@ with tab1:
             else: age = 13
 
             education_options = {
-                "Chưa bao giờ đi học hoặc chỉ học mẫu giáo": 1,
-                "Lớp 1 đến lớp 8 (Tiểu học)": 2,
-                "Lớp 9 đến lớp 11 (Một phần THPT)": 3,
-                "Lớp 12 hoặc GED (Tốt nghiệp THPT)": 4,
-                "Đại học/CĐ 1 đến 3 năm": 5,
-                "Đại học 4 năm trở lên": 6
+                "Never attended school or only kindergarten": 1,
+                "Grades 1 through 8 (Elementary)": 2,
+                "Grades 9 through 11 (Some high school)": 3,
+                "Grade 12 or GED (High school graduate)": 4,
+                "College 1 year to 3 years (Some college)": 5,
+                "College 4 years or more (College graduate)": 6
             }
-            education_text = st.selectbox("Học vấn", options=list(education_options.keys()), index=3)
+            education_text = st.selectbox("Education Level", options=list(education_options.keys()), index=3)
             education = education_options[education_text]
 
-            income_value = st.number_input("Thu nhập hàng năm (USD)", min_value=0, value=50000, step=1000)
+            income_value = st.number_input("Annual Income (USD)", min_value=0, value=50000, step=1000)
             if income_value < 10000: income = 1
             elif income_value < 15000: income = 2
             elif income_value < 20000: income = 3
@@ -135,7 +135,7 @@ with tab1:
             elif income_value < 75000: income = 7
             else: income = 8
             
-        submit_button = st.form_submit_button("Dự đoán và Lưu Google Sheet", type="primary")
+        submit_button = st.form_submit_button("Predict & Save to Google Sheet", type="primary")
 
     if submit_button:
         def yn_to_int(val):
@@ -147,7 +147,7 @@ with tab1:
             yn_to_int(phys_activity), yn_to_int(fruits), yn_to_int(veggies),
             yn_to_int(hvy_alcohol), yn_to_int(any_healthcare), yn_to_int(nodoc_cost),
             int(gen_hlth), int(ment_hlth), int(phys_hlth), yn_to_int(diff_walk),
-            1 if sex == "Nam (1)" else 0,
+            1 if sex == "Male (1)" else 0,
             int(age), int(education), int(income)
         ]
         
@@ -156,14 +156,14 @@ with tab1:
             dtrain = xgb.DMatrix(df_new)
             probability = float(model.predict(dtrain)[0])
             
-            st.success("Đã phân tích xong dữ liệu của bệnh nhân!")
+            st.success("Patient data analysis completed!")
             st.markdown("---")
             colA, colB = st.columns(2)
-            colA.metric(label="Xác suất mắc bệnh tiểu đường", value=f"{probability*100:.2f}%")
+            colA.metric(label="Diabetes Probability", value=f"{probability*100:.2f}%")
             if probability > 0.5:
-                colB.error("Cảnh báo: Nguy cơ CAO")
+                colB.error("Warning: HIGH Risk")
             else:
-                colB.success("Tuyệt vời: Nguy cơ THẤP")
+                colB.success("Great: LOW Risk")
                 
             headers = worksheet.row_values(1)
             row_to_append = [""] * len(headers)
@@ -180,33 +180,33 @@ with tab1:
                 row_to_append.append(round(probability, 4))
                 
             worksheet.append_row(row_to_append, value_input_option="RAW")
-            st.info("✅ Toàn bộ thông tin bệnh án và kết quả đã được tự động lưu mới vào Google Sheet.")
+            st.info("✅ All patient information and results have been successfully saved to Google Sheet.")
             
         except Exception as e:
-            st.error("Lỗi khi xử lý dữ liệu hoặc ghi Google Sheet.")
+            st.error("Error processing data or saving to Google Sheet.")
             st.exception(e)
 
 # ---------------------------------------------------------
-# TAB 2: TẢI FILE HÀNG LOẠT
+# TAB 2: BATCH FILE UPLOAD
 # ---------------------------------------------------------
 with tab2:
-    st.subheader("Dự đoán hàng loạt qua CSV/Excel")
+    st.subheader("Batch Prediction via CSV/Excel")
     
-    # Nút tải file mẫu
+    # Template download button
     template_df = pd.DataFrame(columns=col_names)
     csv_template = template_df.to_csv(index=False).encode('utf-8')
     st.download_button(
-        label="📥 Tải File CSV Mẫu (Template)",
+        label="📥 Download CSV Template",
         data=csv_template,
         file_name="diabetes_template.csv",
         mime="text/csv",
-        help="Tải file này về, điền dữ liệu của các bệnh nhân rồi tải lên để dự đoán."
+        help="Download this file, fill in the patient data, and upload it for prediction."
     )
     
     st.markdown("---")
     
     # Upload file
-    uploaded_file = st.file_uploader("Kéo thả hoặc chọn file CSV/Excel của bạn vào đây", type=["csv", "xlsx"])
+    uploaded_file = st.file_uploader("Drag and drop or select your CSV/Excel file here", type=["csv", "xlsx"])
     
     if uploaded_file is not None:
         try:
@@ -215,42 +215,42 @@ with tab2:
             else:
                 df_upload = pd.read_excel(uploaded_file)
                 
-            # Kiểm tra xem có đủ cột không
+            # Check for missing columns
             missing_cols = [col for col in col_names if col not in df_upload.columns]
             if missing_cols:
-                st.error(f"File của bạn đang thiếu các cột bắt buộc sau: {missing_cols}")
+                st.error(f"Your file is missing the following required columns: {missing_cols}")
                 st.stop()
                 
-            st.success(f"Đã đọc thành công {len(df_upload)} bệnh nhân. Đang xử lý...")
+            st.success(f"Successfully read {len(df_upload)} patients. Processing...")
             
             # Predict
             X_batch = df_upload[col_names].copy()
-            # Đảm bảo toàn bộ là số
+            # Ensure everything is numeric
             for col in col_names:
                 X_batch[col] = pd.to_numeric(X_batch[col], errors="coerce")
                 
             if X_batch.isnull().any().any():
-                st.warning("Có một số ô dữ liệu bị thiếu hoặc không phải dạng số, đã được bỏ qua hoặc thay bằng NaN.")
+                st.warning("Some data cells are missing or non-numeric, they have been skipped or replaced with NaN.")
                 
             dtrain_batch = xgb.DMatrix(X_batch)
             probabilities = model.predict(dtrain_batch)
             
-            # Lưu kết quả
+            # Save results
             df_upload["Probability"] = probabilities
             df_upload["Risk_Pct"] = (probabilities * 100).round(2)
             
             st.dataframe(df_upload[["Probability", "Risk_Pct"] + col_names], use_container_width=True)
             
-            if st.button("Lưu toàn bộ danh sách này lên Google Sheet", type="primary"):
-                with st.spinner("Đang đẩy dữ liệu lên Google Sheet..."):
+            if st.button("Save this entire list to Google Sheet", type="primary"):
+                with st.spinner("Pushing data to Google Sheet..."):
                     headers = worksheet.row_values(1)
                     
-                    # Nếu chưa có cột Probability trên Sheet thì thêm vào
+                    # Add Probability column to sheet if it doesn't exist
                     if "Probability" not in headers:
                         worksheet.update_cell(1, len(headers)+1, "Probability")
                         headers.append("Probability")
                         
-                    # Chuẩn bị dữ liệu theo mảng 2 chiều (nhiều hàng) để đẩy lên 1 lượt
+                    # Prepare 2D array data to push at once
                     rows_to_append = []
                     for idx, row in df_upload.iterrows():
                         single_row = [""] * len(headers)
@@ -258,17 +258,17 @@ with tab2:
                             if col_name in headers:
                                 h_idx = headers.index(col_name)
                                 single_row[h_idx] = row[col_name]
-                        # Thêm probability
+                        # Add probability
                         if "Probability" in headers:
                             h_idx = headers.index("Probability")
                             single_row[h_idx] = round(float(row["Probability"]), 4)
                             
                         rows_to_append.append(single_row)
                     
-                    # Dùng append_rows để ném 1 cục lên Sheet cho nhanh, thay vì loop từng dòng
+                    # Use append_rows to push all data to the sheet at once
                     worksheet.append_rows(rows_to_append, value_input_option="RAW")
-                    st.success(f"✅ Đã lưu thành công {len(rows_to_append)} bệnh nhân vào Google Sheet!")
+                    st.success(f"✅ Successfully saved {len(rows_to_append)} patients to Google Sheet!")
                     
         except Exception as e:
-            st.error("Lỗi khi đọc file hoặc xử lý mô hình. Hãy kiểm tra lại file của bạn (nếu dùng Excel, hãy chắc chắn bạn đã cài thư viện openpyxl).")
+            st.error("Error reading file or processing model. Please check your file (if using Excel, ensure openpyxl is installed).")
             st.exception(e)
